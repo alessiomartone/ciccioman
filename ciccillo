@@ -624,10 +624,9 @@ cov_mat_torch = torch.tensor(cov_mat_r)
 torch.pinverse(cov_mat_torch)
 
 num_assets = num_risky_assets + 1
-bond_val = 100.0
 
 # Initialize the array to store the initial values of the risky assets
-init_risky_asset_vals = np.zeros(num_assets)
+init_risky_asset_vals = np.zeros(num_risky_assets)
 
 # Set the initial values
 init_risky_asset_vals[0] = stock_vals[0]  # Stock
@@ -636,15 +635,17 @@ init_risky_asset_vals[2] = put_vals[0]    # Put option
 
 
 # add the bond to initial assets
-init_asset_vals = np.hstack((np.array([bond_val]),
-                            init_risky_asset_vals))
+#init_asset_vals = np.hstack((np.array([bond_val]),
+#                            init_risky_asset_vals))
 
 # Initialize the portfolio
-init_cash = 1000.0  # Amount of cash
-liquidity_buffer = 0.1  # 10% liquidity buffer
 
 # Calculate the present value of the strike price
 cash_pv_strike = strike_price * np.exp(-r_rf * num_steps * dt)
+
+liquidity_buffer = 0.1  # 10% liquidity buffer
+
+init_cash = (put_vals[0] +  stock_vals[0] - call_vals[0])*(1+liquidity_buffer)  # Amount of cash
 
 # Calculate the amount of cash to hold (including the liquidity buffer)
 cash_hold = cash_pv_strike * (1 + liquidity_buffer)
@@ -657,3 +658,33 @@ x_vals_init[0] = cash_hold  # Cash
 x_vals_init[1] = 1  # Stock
 x_vals_init[2] = -1  # Call option
 x_vals_init[3] = 1  # Put option
+
+riskfree_rate = r_rf
+fee_cash = 0.01  # Transaction fee for cash
+fee_stock = 0.05  # Transaction fee for stock
+fee_call = 0.05  # Transaction fee for call option
+fee_put = 0.05  # Transaction fee for put option
+
+# Set the transaction fees for each asset
+all_fees = np.array([fee_cash, fee_stock, fee_call, fee_put])
+Omega_mat = np.diag(all_fees)
+
+# Model parameters
+lambd = 0.001
+Omega_mat = 15.5 * np.diag(all_fees)
+eta = 1.5
+
+beta = 100.0
+gamma = 0.95
+
+# Since you're not using expected returns in your model, we can remove the line related to it
+# exp_returns = expected_risky_returns
+
+Sigma_r = cov_mat_r
+
+# Since you're not using a benchmark portfolio, we can remove the code related to it
+# target_return =  0.5
+# benchmark_portf = [ init_cash   * np.exp(dt * target_return)]
+# for i in range(1,num_steps):
+#     benchmark_portf.append(benchmark_portf[i-1]*np.exp(dt * target_return) )
+# print(benchmark_portf[0], benchmark_portf[-1])
